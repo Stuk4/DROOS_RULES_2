@@ -1,0 +1,64 @@
+package edu.cibertec.drools
+
+//list any import classes here.
+import edu.cibertec.drools.bean.Transaction
+
+//Importamos las funciones
+import function edu.cibertec.drools.report.Reporte.ok
+
+//declare any global variables here
+
+//declare any global variables here
+
+
+rule "SWITCHCORE_rule"
+	dialect "mvel"
+	no-loop
+when
+	$Transaction : Transaction($mti : mti, $merchant : merchant, $authID : authID, $ccode : ccode, $amount : amount )
+	eval($amount > 5000)
+then
+	modify($Transaction){
+		toApp = "SWITCHCORE"
+	}
+	ok(kcontext, $Transaction)
+end		
+
+
+rule "VISANET_rule"
+	dialect "mvel"
+	no-loop
+when $Transaction : Transaction ($toApp: toApp, $mti : mti, $merchant : merchant, $authID : authID, $ccode : ccode, $amount : amount )
+eval ($mti == '200' && $merchant == 'VISA' && $toApp == null && $amount <= 5000)
+then 
+	modify($Transaction){
+		toApp = "VISANET"
+	}	
+	ok(kcontext, $Transaction)
+end
+
+rule "PMC_rule"
+	dialect "mvel"
+	no-loop
+when $Transaction : Transaction ($toApp: toApp, $mti : mti, $merchant : merchant, $authID : authID, $ccode : ccode, $amount : amount )
+eval ($mti == '100' && $authID == 'MC' && $toApp == null && $amount <= 5000)
+then 
+	modify($Transaction){
+		toApp = "PMC"
+	}	
+	ok(kcontext, $Transaction)
+end
+
+rule "SWITCH_rule"
+	dialect "mvel"
+	no-loop
+when $Transaction : Transaction ($toApp: toApp, $mti : mti, $merchant : merchant, $authID : authID, $ccode : ccode, $amount : amount )
+eval ($mti == '400' && $ccode == '640' && $toApp == null && $amount <= 5000)
+then 
+	modify($Transaction){
+		toApp = "SWITCH"
+	}	
+	ok(kcontext, $Transaction)
+end
+
+
